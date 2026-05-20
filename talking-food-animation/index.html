@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>しゃべる食べ物アニメーション</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    }
+
+    /* TikTok style phone frame */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: #111;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 60px rgba(255,255,255,0.1);
+    }
+
+    /* Video area */
+    .video-area {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #87ceeb 0%, #c8e6f5 40%, #d4a574 70%, #c8956a 100%);
+    }
+
+    /* Background scene */
+    .bg-scene {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 110%, #d4a574 0%, transparent 60%),
+        linear-gradient(180deg, #87ceeb 0%, #b8ddf0 35%, #e8c99e 65%, #d4a574 100%);
+    }
+
+    /* Top title banner */
+    .top-banner {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 16px;
+      padding: 8px 20px;
+      text-align: center;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      white-space: nowrap;
+    }
+    .top-banner .line1 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #222;
+      letter-spacing: 1px;
+    }
+    .top-banner .line2 {
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .top-banner .highlight { color: #ff4040; }
+    .top-banner .normal { color: #222; }
+
+    /* Character stage */
+    .character-stage {
+      position: absolute;
+      bottom: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 380px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    /* ===== MAGURO (TUNA) CHARACTER ===== */
+    .maguro {
+      position: relative;
+      width: 180px;
+      animation: bodyBounce 0.5s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4));
+    }
+
+    @keyframes bodyBounce {
+      from { transform: translateY(0) rotate(-1deg); }
+      to   { transform: translateY(-8px) rotate(1deg); }
+    }
+
+    /* Body: red tuna block */
+    .maguro-body {
+      width: 160px;
+      height: 200px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #cc2200 40%, #aa1800 100%);
+      border-radius: 28px 28px 20px 20px;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: inset -8px -8px 20px rgba(0,0,0,0.3), inset 4px 4px 12px rgba(255,180,180,0.4);
+    }
+
+    /* Shine on body */
+    .maguro-body::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 20px;
+      width: 40px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+      border-radius: 20px;
+    }
+
+    /* Marbling lines (霜降り) */
+    .maguro-body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        -30deg,
+        transparent 0px,
+        transparent 18px,
+        rgba(255,200,180,0.15) 18px,
+        rgba(255,200,180,0.15) 22px
+      );
+      border-radius: 28px 28px 20px 20px;
+    }
+
+    /* Face container */
+    .maguro-face {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 130px;
+    }
+
+    /* Eyes */
+    .eye {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .eye-left  { top: 20px; left: 12px; }
+    .eye-right { top: 20px; right: 12px; }
+
+    .pupil {
+      width: 18px;
+      height: 18px;
+      background: #1a0a00;
+      border-radius: 50%;
+      position: relative;
+      animation: eyeLook 3s ease-in-out infinite;
+    }
+    .pupil::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    @keyframes eyeLook {
+      0%, 40%  { transform: translateX(0); }
+      50%      { transform: translateX(3px); }
+      60%, 90% { transform: translateX(-3px); }
+      100%     { transform: translateX(0); }
+    }
+
+    /* Blink */
+    .eye-lid {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #ff6b6b, #cc2200);
+      border-radius: 50%;
+      transform: scaleY(0);
+      transform-origin: top;
+      animation: blink 4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 94%, 100% { transform: scaleY(0); }
+      96%, 98%      { transform: scaleY(1); }
+    }
+
+    /* Eyebrows */
+    .eyebrow {
+      position: absolute;
+      width: 36px;
+      height: 6px;
+      background: #1a0a00;
+      border-radius: 4px;
+    }
+    .eyebrow-left {
+      top: 8px;
+      left: 8px;
+      transform: rotate(-15deg);
+    }
+    .eyebrow-right {
+      top: 8px;
+      right: 8px;
+      transform: rotate(15deg);
+    }
+
+    /* Mouth */
+    .mouth-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 44px;
+      overflow: hidden;
+    }
+
+    .mouth-outer {
+      width: 70px;
+      height: 44px;
+      background: #1a0a00;
+      border-radius: 0 0 35px 35px;
+      position: relative;
+      overflow: hidden;
+      animation: talkMouth 0.18s ease-in-out infinite alternate;
+    }
+
+    @keyframes talkMouth {
+      from { transform: scaleY(0.15); }
+      to   { transform: scaleY(1); }
+    }
+
+    .mouth-inner {
+      position: absolute;
+      inset: 2px;
+      background: linear-gradient(180deg, #cc2233 0%, #880011 100%);
+      border-radius: 0 0 34px 34px;
+    }
+
+    /* Teeth */
+    .teeth {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 14px;
+      background: white;
+      display: flex;
+      gap: 2px;
+      padding: 0 4px;
+    }
+    .tooth {
+      flex: 1;
+      background: #f5f5f5;
+      border-radius: 0 0 4px 4px;
+      border-right: 1px solid #ddd;
+    }
+
+    /* Tongue */
+    .tongue {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 20px;
+      background: linear-gradient(180deg, #ff8888, #ff5566);
+      border-radius: 18px;
+    }
+
+    /* Cheeks (blushing) */
+    .cheek {
+      position: absolute;
+      width: 28px;
+      height: 16px;
+      background: rgba(255, 100, 80, 0.4);
+      border-radius: 50%;
+      bottom: 30px;
+      filter: blur(3px);
+    }
+    .cheek-left  { left: 5px; }
+    .cheek-right { right: 5px; }
+
+    /* Headband (はちまき) */
+    .hachimaki {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      z-index: 5;
+    }
+
+    .hachimaki-band {
+      width: 160px;
+      height: 24px;
+      background: repeating-linear-gradient(
+        90deg,
+        #f0f0f0 0px, #f0f0f0 8px,
+        #e0e0e0 8px, #e0e0e0 10px
+      );
+      border-radius: 4px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .hachimaki-knot {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      background: #cc0000;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hachimaki-knot::after {
+      content: '●';
+      font-size: 8px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Arms */
+    .arm {
+      position: absolute;
+      width: 32px;
+      height: 80px;
+      background: linear-gradient(135deg, #ff6b6b, #cc2200);
+      border-radius: 16px;
+      bottom: 40px;
+      box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2);
+    }
+    .arm-left {
+      left: -24px;
+      transform: rotate(30deg);
+      transform-origin: top center;
+      animation: armSwayLeft 0.5s ease-in-out infinite alternate;
+    }
+    .arm-right {
+      right: -24px;
+      transform: rotate(-30deg);
+      transform-origin: top center;
+      animation: armSwayRight 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes armSwayLeft {
+      from { transform: rotate(25deg); }
+      to   { transform: rotate(40deg); }
+    }
+    @keyframes armSwayRight {
+      from { transform: rotate(-25deg); }
+      to   { transform: rotate(-40deg); }
+    }
+
+    /* Hand fist */
+    .fist {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 26px;
+      height: 24px;
+      background: linear-gradient(135deg, #ff8080, #dd3300);
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+
+    /* ===== SUBTITLE AREA ===== */
+    .subtitle-area {
+      position: absolute;
+      bottom: 120px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 15;
+      padding: 0 20px;
+    }
+
+    .subtitle-text {
+      display: inline-block;
+      font-size: 32px;
+      font-weight: 900;
+      color: white;
+      text-shadow:
+        3px 3px 0 #000,
+        -3px 3px 0 #000,
+        3px -3px 0 #000,
+        -3px -3px 0 #000,
+        0 4px 12px rgba(0,0,0,0.8);
+      letter-spacing: 2px;
+      animation: subtitlePop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    .subtitle-text.red { color: #ff4040; }
+    .subtitle-text.yellow { color: #ffe040; }
+
+    @keyframes subtitlePop {
+      from { transform: scale(0.7) translateY(10px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    /* ===== TikTok UI elements ===== */
+    .tiktok-ui {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Right side buttons */
+    .side-buttons {
+      position: absolute;
+      right: 12px;
+      bottom: 180px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .avatar-btn {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #ff6b6b, #cc2200);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+      font-weight: bold;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .avatar-btn .plus-badge {
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 18px;
+      background: #ff2d55;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      border: 2px solid white;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .action-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      backdrop-filter: blur(4px);
+    }
+    .action-count {
+      font-size: 12px;
+      color: white;
+      font-weight: 600;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Bottom info */
+    .bottom-info {
+      position: absolute;
+      bottom: 60px;
+      left: 16px;
+      right: 80px;
+    }
+    .creator-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+      margin-bottom: 4px;
+    }
+    .caption {
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+      line-height: 1.4;
+    }
+    .hashtag { color: #80cfff; }
+
+    /* Sound bar animation */
+    .music-bar {
+      position: absolute;
+      bottom: 62px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #333, #111);
+      border: 3px solid #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      animation: spin 4s linear infinite;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* Bottom nav bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px 4px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .nav-icon { font-size: 22px; }
+    .nav-label { font-size: 10px; color: rgba(255,255,255,0.7); }
+    .nav-item.active .nav-label { color: white; }
+    .nav-plus {
+      width: 44px;
+      height: 28px;
+      background: linear-gradient(90deg, #69c9d0, #fff, #ee1d52);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: white;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+    }
+
+    /* Floating emoji particles */
+    .particle {
+      position: absolute;
+      font-size: 28px;
+      animation: floatUp linear forwards;
+      pointer-events: none;
+      z-index: 12;
+    }
+    @keyframes floatUp {
+      from { transform: translateY(0) scale(1); opacity: 1; }
+      to   { transform: translateY(-200px) scale(0.4); opacity: 0; }
+    }
+
+    /* Character selection tabs */
+    .char-tabs {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 25;
+    }
+    .char-tab {
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 20px;
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+      pointer-events: all;
+    }
+    .char-tab.active {
+      background: #ff2d55;
+      border-color: #ff2d55;
+    }
+
+    /* ===== ONIGIRI CHARACTER ===== */
+    .onigiri {
+      position: relative;
+      width: 180px;
+      animation: bodyBounce 0.5s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4));
+      display: none;
+    }
+
+    .onigiri-body {
+      width: 160px;
+      height: 180px;
+      background: linear-gradient(180deg, #fff 0%, #f0f0ee 100%);
+      border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: inset -6px -8px 16px rgba(0,0,0,0.1), inset 3px 3px 8px rgba(255,255,255,0.9);
+    }
+
+    .nori-strip {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 60px;
+      background: linear-gradient(180deg, #1a2a1a, #0d1a0d);
+      border-radius: 0 0 20px 20px;
+    }
+
+    /* Onigiri face */
+    .onigiri-face {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 110px;
+    }
+
+    .eye-oni {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .eye-oni-left  { top: 15px; left: 18px; }
+    .eye-oni-right { top: 15px; right: 18px; }
+
+    /* ===== FOOD SWITCHER ===== */
+    #character-maguro { display: block; }
+    #character-onigiri { display: none; }
+    #character-ramen { display: none; }
+
+    /* Ramen bowl */
+    .ramen {
+      position: relative;
+      width: 200px;
+      animation: bodyBounce 0.5s ease-in-out infinite alternate;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4));
+    }
+
+    .ramen-bowl {
+      width: 190px;
+      height: 140px;
+      background: linear-gradient(180deg, #f5e6d0 0%, #e8d0b0 100%);
+      border-radius: 0 0 95px 95px / 0 0 70px 70px;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: inset -8px -8px 20px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .broth {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      height: 80px;
+      background: linear-gradient(180deg, #f0a830 0%, #cc8820 100%);
+      border-radius: 0 0 80px 80px / 0 0 50px 50px;
+    }
+
+    .noodle {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      right: 20px;
+      height: 40px;
+      background: repeating-linear-gradient(
+        0deg,
+        #f5e0a0 0px, #f5e0a0 4px,
+        #eace80 4px, #eace80 8px
+      );
+      border-radius: 20px;
+      opacity: 0.9;
+    }
+
+    .ramen-rim {
+      position: absolute;
+      top: -8px;
+      left: -4px;
+      right: -4px;
+      height: 24px;
+      background: linear-gradient(180deg, #e8d0b0, #d4b890);
+      border-radius: 20px;
+    }
+
+    /* Ramen face */
+    .ramen-face {
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 100px;
+    }
+
+    .steam {
+      position: absolute;
+      top: -50px;
+      font-size: 24px;
+      animation: steamRise 1.5s ease-in-out infinite;
+    }
+    .steam:nth-child(1) { left: 40px; animation-delay: 0s; }
+    .steam:nth-child(2) { left: 80px; animation-delay: 0.5s; }
+    .steam:nth-child(3) { left: 60px; animation-delay: 1s; }
+
+    @keyframes steamRise {
+      0%   { transform: translateY(0) scale(1); opacity: 0.8; }
+      100% { transform: translateY(-30px) scale(1.4); opacity: 0; }
+    }
+
+    /* ===== TALKING MOUTH (shared) ===== */
+    .mouth-shared {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 64px;
+      height: 40px;
+      background: #1a0a00;
+      border-radius: 0 0 32px 32px;
+      overflow: hidden;
+      animation: talkMouth 0.18s ease-in-out infinite alternate;
+    }
+    .mouth-shared-inner {
+      position: absolute;
+      inset: 2px;
+      background: linear-gradient(180deg, #cc2233, #880011);
+      border-radius: 0 0 30px 30px;
+    }
+    .mouth-shared-teeth {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: white;
+    }
+
+    /* Caption badge */
+    .ai-badge {
+      position: absolute;
+      bottom: 150px;
+      left: 16px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Tap to change hint */
+    .tap-hint {
+      position: absolute;
+      top: 100px;
+      right: 16px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      z-index: 25;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="video-area" id="videoArea">
+      <div class="bg-scene"></div>
+
+      <!-- Top banner -->
+      <div class="top-banner">
+        <div class="line1">最近大バズりしてる</div>
+        <div class="line2">
+          <span class="highlight">ライフハック</span>
+          <span class="normal">AI動画</span>
+        </div>
+      </div>
+
+      <!-- Character tabs -->
+      <div class="char-tabs">
+        <div class="char-tab active" onclick="switchChar('maguro', this)">🐟 まぐろ</div>
+        <div class="char-tab" onclick="switchChar('onigiri', this)">🍙 おにぎり</div>
+        <div class="char-tab" onclick="switchChar('ramen', this)">🍜 ラーメン</div>
+      </div>
+
+      <div class="tap-hint">タップで切替</div>
+
+      <!-- Character stage -->
+      <div class="character-stage">
+
+        <!-- MAGURO -->
+        <div class="maguro" id="character-maguro">
+          <!-- Hachimaki -->
+          <div class="hachimaki">
+            <div class="hachimaki-band">
+              <div class="hachimaki-knot"></div>
+            </div>
+          </div>
+
+          <div class="maguro-body">
+            <div class="arm arm-left"><div class="fist"></div></div>
+            <div class="arm arm-right"><div class="fist"></div></div>
+
+            <div class="maguro-face">
+              <div class="eyebrow eyebrow-left"></div>
+              <div class="eyebrow eyebrow-right"></div>
+
+              <div class="eye eye-left">
+                <div class="pupil"></div>
+                <div class="eye-lid"></div>
+              </div>
+              <div class="eye eye-right">
+                <div class="pupil"></div>
+                <div class="eye-lid"></div>
+              </div>
+
+              <div class="cheek cheek-left"></div>
+              <div class="cheek cheek-right"></div>
+
+              <div class="mouth-container">
+                <div class="mouth-outer">
+                  <div class="mouth-inner"></div>
+                  <div class="teeth">
+                    <div class="tooth"></div>
+                    <div class="tooth"></div>
+                    <div class="tooth"></div>
+                    <div class="tooth"></div>
+                  </div>
+                  <div class="tongue"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ONIGIRI -->
+        <div class="onigiri" id="character-onigiri">
+          <div class="onigiri-body">
+            <div class="nori-strip"></div>
+            <div class="onigiri-face">
+              <div class="eyebrow eyebrow-left" style="background:#333;top:2px;left:14px;"></div>
+              <div class="eyebrow eyebrow-right" style="background:#333;top:2px;right:14px;"></div>
+              <div class="eye-oni eye-oni-left">
+                <div class="pupil" style="background:#333;width:14px;height:14px;"></div>
+              </div>
+              <div class="eye-oni eye-oni-right">
+                <div class="pupil" style="background:#333;width:14px;height:14px;"></div>
+              </div>
+              <div class="mouth-shared" style="width:58px;height:36px;bottom:5px;">
+                <div class="mouth-shared-inner"></div>
+                <div class="mouth-shared-teeth"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RAMEN -->
+        <div class="ramen" id="character-ramen">
+          <div class="ramen-face">
+            <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:80px;background:linear-gradient(180deg,#ffe0b0,#ffcc88);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+              <div style="position:relative;width:110px;height:70px;">
+                <div class="eyebrow eyebrow-left" style="background:#4a3000;top:8px;left:8px;"></div>
+                <div class="eyebrow eyebrow-right" style="background:#4a3000;top:8px;right:8px;"></div>
+                <div class="eye eye-left" style="background:#fff8ee;top:18px;left:8px;">
+                  <div class="pupil" style="background:#2a1500;"></div>
+                  <div class="eye-lid" style="background:linear-gradient(135deg,#ffe0b0,#ffcc88);"></div>
+                </div>
+                <div class="eye eye-right" style="background:#fff8ee;top:18px;right:8px;">
+                  <div class="pupil" style="background:#2a1500;"></div>
+                  <div class="eye-lid" style="background:linear-gradient(135deg,#ffe0b0,#ffcc88);"></div>
+                </div>
+                <div class="mouth-shared" style="bottom:2px;width:56px;height:34px;">
+                  <div class="mouth-shared-inner"></div>
+                  <div class="mouth-shared-teeth"></div>
+                </div>
+              </div>
+            </div>
+            <div class="steam">〜</div>
+            <div class="steam">〜</div>
+            <div class="steam">〜</div>
+          </div>
+          <div class="ramen-bowl">
+            <div class="ramen-rim"></div>
+            <div class="broth">
+              <div class="noodle"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /character-stage -->
+
+      <!-- Subtitle -->
+      <div class="subtitle-area">
+        <span class="subtitle-text" id="subtitle">俺は刺身</span>
+      </div>
+
+      <!-- AI badge -->
+      <div class="ai-badge">✨ クリエイターがAI生成のラベルを付けました</div>
+
+      <!-- TikTok UI overlay -->
+      <div class="tiktok-ui">
+        <!-- Side buttons -->
+        <div class="side-buttons">
+          <div class="avatar-btn">
+            🍣
+            <div class="plus-badge">+</div>
+          </div>
+          <div class="action-btn">
+            <div class="action-icon">❤️</div>
+            <div class="action-count">1,007</div>
+          </div>
+          <div class="action-btn">
+            <div class="action-icon">💬</div>
+            <div class="action-count">240</div>
+          </div>
+          <div class="action-btn">
+            <div class="action-icon">🔖</div>
+            <div class="action-count">603</div>
+          </div>
+          <div class="action-btn">
+            <div class="action-icon">↗️</div>
+            <div class="action-count">106</div>
+          </div>
+        </div>
+
+        <!-- Bottom info -->
+        <div class="bottom-info">
+          <div class="creator-name">食べ物キャラ × AI動画 · 5-20</div>
+          <div class="caption">
+            SNSで超バズる AI×しゃべる食べ物✨<br>
+            <span class="hashtag">#AI #AI動画 #しゃべる食べ物</span>
+          </div>
+        </div>
+
+        <!-- Music disc -->
+        <div class="music-bar">🎵</div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item">
+          <div class="nav-icon">🏠</div>
+          <div class="nav-label">ホーム</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">🔍</div>
+          <div class="nav-label">検索</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-plus">+</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📬</div>
+          <div class="nav-label">受信箱</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-icon">👤</div>
+          <div class="nav-label">マイページ</div>
+        </div>
+      </div>
+
+    </div><!-- /video-area -->
+  </div><!-- /phone-frame -->
+
+  <script>
+    // ----- Subtitle scripts per character -----
+    const scripts = {
+      maguro: [
+        { text: "俺は刺身", class: "" },
+        { text: "新鮮やで！", class: "yellow" },
+        { text: "食べんといて！", class: "red" },
+        { text: "俺めっちゃ", class: "" },
+        { text: "旨いやろ？", class: "yellow" },
+        { text: "お醤油かけな", class: "" },
+        { text: "いでや！！", class: "red" },
+        { text: "わさびも", class: "" },
+        { text: "ちょっとだけな", class: "yellow" },
+        { text: "俺が一番", class: "red" },
+        { text: "旨い魚や！", class: "yellow" },
+      ],
+      onigiri: [
+        { text: "俺はおにぎり", class: "" },
+        { text: "中身は梅やで", class: "red" },
+        { text: "海苔がええ感じ", class: "" },
+        { text: "コンビニで", class: "yellow" },
+        { text: "買わんといて！", class: "red" },
+        { text: "手作りが最高！", class: "yellow" },
+        { text: "ほかほか食べて", class: "" },
+        { text: "な！", class: "red" },
+      ],
+      ramen: [
+        { text: "俺はラーメン", class: "" },
+        { text: "スープ飲んで！", class: "yellow" },
+        { text: "熱いから気ぃ", class: "" },
+        { text: "つけてや！", class: "red" },
+        { text: "麺も残さず", class: "" },
+        { text: "食べてな！", class: "yellow" },
+        { text: "替え玉どうぞ！", class: "red" },
+        { text: "俺最高やろ？", class: "yellow" },
+      ],
+    };
+
+    let currentChar = 'maguro';
+    let lineIndex = 0;
+    let intervalId;
+
+    const subtitleEl = document.getElementById('subtitle');
+
+    function nextLine() {
+      const lines = scripts[currentChar];
+      lineIndex = (lineIndex + 1) % lines.length;
+      const line = lines[lineIndex];
+      subtitleEl.className = 'subtitle-text ' + line.class;
+      subtitleEl.textContent = line.text;
+      // re-trigger animation
+      subtitleEl.style.animation = 'none';
+      subtitleEl.offsetHeight; // reflow
+      subtitleEl.style.animation = '';
+    }
+
+    function startScript() {
+      clearInterval(intervalId);
+      lineIndex = 0;
+      const lines = scripts[currentChar];
+      subtitleEl.className = 'subtitle-text ' + lines[0].class;
+      subtitleEl.textContent = lines[0].text;
+      intervalId = setInterval(nextLine, 1200);
+    }
+
+    function switchChar(name, tabEl) {
+      // Hide all
+      document.getElementById('character-maguro').style.display = 'none';
+      document.getElementById('character-onigiri').style.display = 'none';
+      document.getElementById('character-ramen').style.display = 'none';
+
+      // Show selected
+      document.getElementById('character-' + name).style.display = 'block';
+
+      // Update tabs
+      document.querySelectorAll('.char-tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+
+      currentChar = name;
+      startScript();
+
+      // Emit particle
+      spawnParticles();
+    }
+
+    // ----- Floating emoji particles -----
+    const emojis = ['❤️','🔥','✨','💯','🎵','👑','💫','🌟'];
+    function spawnParticles() {
+      const area = document.getElementById('videoArea');
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          const p = document.createElement('div');
+          p.className = 'particle';
+          p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          p.style.left = (20 + Math.random() * 60) + '%';
+          p.style.bottom = '200px';
+          p.style.animationDuration = (1 + Math.random()) + 's';
+          area.appendChild(p);
+          setTimeout(() => p.remove(), 2000);
+        }, i * 150);
+      }
+    }
+
+    // Auto-spawn particles every 5s
+    setInterval(spawnParticles, 5000);
+
+    // Start
+    startScript();
+    setTimeout(spawnParticles, 1000);
+  </script>
+</body>
+</html>
