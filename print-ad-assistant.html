@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print & Ad Assistant</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { height: 100dvh; background: #1a1612; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-direction: column; overflow: hidden; color: #d0bfa0; }
+
+  /* API key setup */
+  #setup { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  #setup .card { background: #221e18; border: 1px solid #2a2218; border-radius: 16px; padding: 32px; width: 100%; max-width: 400px; }
+  #setup h2 { color: #e8d9be; font-size: 18px; margin-bottom: 8px; }
+  #setup p { color: #6a5a42; font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+  #setup input { width: 100%; background: #1a1612; border: 1px solid #2e2820; border-radius: 8px; padding: 10px 12px; color: #d0bfa0; font-size: 13px; outline: none; margin-bottom: 12px; }
+  #setup input:focus { border-color: #c8a96e; }
+  #setup button { width: 100%; padding: 10px; border-radius: 8px; border: none; background: linear-gradient(135deg, #c8a96e, #8b6914); color: #1a1612; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  /* Main chat UI */
+  #app { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+
+  /* Header */
+  .header { padding: 12px 16px; border-bottom: 1px solid #2a2218; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .header-icon { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #c8a96e, #8b6914); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .header-title { color: #e8d9be; font-weight: 600; font-size: 15px; }
+  .header-sub { color: #6a5a42; font-size: 11px; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+  .status span { color: #6a5a42; font-size: 11px; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid #2a2218; flex-shrink: 0; overflow-x: auto; }
+  .tab { padding: 8px 12px; font-size: 12px; white-space: nowrap; border-bottom: 2px solid transparent; color: #4a3f30; cursor: pointer; background: none; border-top: none; border-left: none; border-right: none; transition: color .2s; }
+  .tab.active { border-bottom-color: #c8a96e; color: #c8a96e; font-weight: 700; }
+
+  /* Messages */
+  .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .msg-icon { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #c8a96e, #8b6914); display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 8px; flex-shrink: 0; margin-top: 2px; }
+  .bubble { max-width: 80%; padding: 8px 12px; font-size: 14px; line-height: 1.6; }
+  .bubble.assistant { background: #221e18; border: 1px solid #2a2218; border-radius: 3px 13px 13px 13px; }
+  .bubble.user { background: linear-gradient(135deg, #c8a96e, #a07832); color: #1a1612; border-radius: 13px 3px 13px 13px; }
+
+  /* Typing indicator */
+  .typing { display: flex; gap: 4px; padding: 10px 12px; background: #221e18; border: 1px solid #2a2218; border-radius: 3px 13px 13px 13px; }
+  .typing span { width: 8px; height: 8px; border-radius: 50%; background: #c8a96e; animation: bounce .9s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* Suggestions */
+  .suggestions { padding: 8px 16px; flex-shrink: 0; }
+  .suggestions-label { font-size: 9px; color: #3a3020; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 4px 12px; font-size: 12px; border: 1px solid #2a2218; border-radius: 999px; color: #6a5a42; background: none; cursor: pointer; transition: border-color .2s, color .2s; }
+  .chip:hover { border-color: #c8a96e; color: #c8a96e; }
+
+  /* Input */
+  .input-area { padding: 8px 16px 20px; border-top: 1px solid #2a2218; flex-shrink: 0; }
+  .input-box { display: flex; gap: 8px; align-items: flex-end; background: #221e18; border: 1px solid #2e2820; border-radius: 12px; padding: 8px 12px; transition: border-color .2s; }
+  .input-box:focus-within { border-color: #c8a96e; }
+  textarea { flex: 1; background: none; border: none; outline: none; color: #d0bfa0; font-size: 14px; line-height: 1.5; resize: none; max-height: 96px; overflow-y: auto; font-family: inherit; }
+  textarea::placeholder { color: #3a3020; }
+  .send-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: linear-gradient(135deg, #c8a96e, #8b6914); color: #1a1612; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .2s; }
+  .send-btn:disabled { background: #2a2218; color: #3a3020; cursor: default; }
+</style>
+</head>
+<body>
+
+<!-- API Key Setup -->
+<div id="setup">
+  <div class="card">
+    <h2>🖨 Print & Ad Assistant</h2>
+    <p>Anthropic API キーを入力してください。<br>キーはブラウザのセッションにのみ保存され、外部には送信されません。</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+    <button onclick="startApp()">開始する</button>
+  </div>
+</div>
+
+<!-- Chat App -->
+<div id="app">
+  <div class="header">
+    <div class="header-icon">🖨</div>
+    <div>
+      <div class="header-title">Print & Ad Assistant</div>
+      <div class="header-sub">社内AIアシスタント</div>
+    </div>
+    <div class="status"><div class="dot"></div><span>稼働中</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="all">すべて</button>
+    <button class="tab" data-tab="estimate">💰 見積もり</button>
+    <button class="tab" data-tab="spec">📋 入稿規定</button>
+    <button class="tab" data-tab="flow">📅 制作進行</button>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="suggestions">
+    <div class="suggestions-label">クイック質問</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <textarea id="input" rows="1" placeholder="質問を入力… (Enter送信)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()" disabled>↑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `あなたは印刷・広告会社の社内AIアシスタントです。
+以下のデータをもとに日本語で簡潔に答えてください。
+
+【価格表・税抜・コート紙90kg基準】
+A4片面: 100部=8,000円/500部=18,000円/1,000部=28,000円/3,000部=55,000円
+A4両面: 100部=12,000円/500部=25,000円/1,000部=38,000円/3,000部=72,000円
+A3片面: 100部=14,000円/500部=32,000円/1,000部=52,000円/3,000部=98,000円
+A3両面: 100部=20,000円/500部=45,000円/1,000部=72,000円/3,000部=135,000円
+名刺片面(91×55mm): 100枚=3,500円/500枚=8,000円/1,000枚=13,000円
+名刺両面: 100枚=5,000円/500枚=11,000円/1,000枚=18,000円
+B2ポスター: 10枚=15,000円/50枚=45,000円/100枚=75,000円
+B1ポスター: 10枚=25,000円/50枚=80,000円/100枚=130,000円
+加工: PP加工+15〜30% / 箔押し+30〜50% / 型抜き+20〜40% / 折り+10〜20%
+
+【入稿規定】
+解像度: 印刷用350dpi以上・ロゴ600dpi以上(72dpiはNG)
+カラー: CMYK必須(RGB不可)・黒はK100%のみ・白はC0M0Y0K0
+塗り足し: 通常3mm・大判(B1以上)5mm・断ち切りは必須
+ファイル: PDF/X-4推奨・AI(アウトライン化必須)・PSD(レイヤー統合)
+フォント: アウトライン化必須(未処理は差し戻し)
+禁止: スプレッド入稿・透明効果未処理・リンク未埋め込み
+
+【制作フロー(チラシ標準)】
+受注→ラフ(1-2日)→デザイン(2-3日)→社内確認(1日)→客先確認(1-3日)→入稿→印刷(3-5営業日)→納品
+標準リードタイム: 10〜15営業日
+特急対応: +30〜50%で最短5〜7営業日(要事前確認)
+
+【回答スタイル】
+- 簡潔に箇条書きで答える
+- 価格は必ず「概算」と明示し「正式見積もりは営業担当へ」と添える
+- 専門用語は補足説明を添える
+- わからない場合は正直に「わかりません」と答える`;
+
+const SUGGESTIONS = {
+  all:      ['A3フルカラー500部の概算は？','入稿データの解像度規定を教えて','名刺の標準制作フローは？','塗り足しって何mm必要？'],
+  estimate: ['A4両面500部の概算は？','A3フルカラー500部の概算は？','PP加工するといくら上がる？','名刺両面1000枚の概算は？'],
+  spec:     ['塗り足しって何mm必要？','解像度規定を教えて','カラーモードはCMYK？','フォントのアウトライン化とは？'],
+  flow:     ['名刺の標準制作フローは？','チラシのリードタイムは？','急ぎで対応できる？','入稿前チェックリストを教えて'],
+};
+
+let apiKey = '';
+let messages = [];
+let loading = false;
+let currentTab = 'all';
+
+function startApp() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) { alert('有効なAPIキーを入力してください'); return; }
+  apiKey = key;
+  sessionStorage.setItem('anthropic_key', key);
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  addMessage('assistant', 'こんにちは！印刷・広告会社の社内AIアシスタントです。\n見積もり・入稿規定・制作進行について何でも聞いてください。');
+  renderChips();
+}
+
+// Restore key from session if available
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('anthropic_key');
+  if (saved) { document.getElementById('apiKeyInput').value = saved; }
+
+  // Tab click
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      currentTab = t.dataset.tab;
+      renderChips();
+    });
+  });
+
+  // Textarea auto-resize + enable send button
+  const inp = document.getElementById('input');
+  inp.addEventListener('input', () => {
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 96) + 'px';
+    document.getElementById('sendBtn').disabled = !inp.value.trim() || loading;
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+});
+
+function renderChips() {
+  const chips = document.getElementById('chips');
+  chips.innerHTML = SUGGESTIONS[currentTab].map(s =>
+    `<button class="chip" onclick="send('${s.replace(/'/g, "\\'")}')">${s}</button>`
+  ).join('');
+}
+
+function addMessage(role, content) {
+  messages.push({ role, content });
+  renderMessages();
+}
+
+function renderMessages() {
+  const el = document.getElementById('messages');
+  el.innerHTML = messages.map(m => `
+    <div class="msg ${m.role}">
+      ${m.role === 'assistant' ? '<div class="msg-icon">🖨</div>' : ''}
+      <div class="bubble ${m.role}">${escHtml(m.content).replace(/\n/g, '<br>')}</div>
+    </div>
+  `).join('');
+  if (loading) {
+    el.innerHTML += `
+      <div class="msg assistant">
+        <div class="msg-icon">🖨</div>
+        <div class="typing"><span></span><span></span><span></span></div>
+      </div>`;
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function send(text) {
+  const inp = document.getElementById('input');
+  const t = (text || inp.value).trim();
+  if (!t || loading) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addMessage('user', t);
+  loading = true;
+  renderMessages();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+      }),
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text ?? 'エラーが発生しました。';
+    addMessage('assistant', reply);
+  } catch {
+    addMessage('assistant', 'エラーが発生しました。');
+  } finally {
+    loading = false;
+    renderMessages();
+  }
+}
+</script>
+</body>
+</html>
